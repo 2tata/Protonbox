@@ -15,3 +15,15 @@
 6. Install "Adafruit NeoPixel", "BlueFairy" and "ShiftRegister74HC595"
 
 Happy flashing :)
+
+## FreeCAD
+
+### apply interlocking
+
+1. create Multijoin Object without interlocking.
+
+2. map odometrie values to multijoin pads
+
+3. create second Multijoin Object
+
+4. Apply your Interlocking
