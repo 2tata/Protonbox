@@ -34,10 +34,10 @@ ShiftRegister74HC595<numberOfShiftRegisters> sr(dataPin, clockPin, latchPin);
 
 bluefairy::Scheduler scheduler;
 
-void clearStrip(Adafruit_NeoPixel * myStrip) {
+void clearStrip(Adafruit_NeoPixel& myStrip) {
   for ( PIXELTYPE i = 0; i < NUMPIXELS; i++) {
-    myStrip->setPixelColor(i, 0x000000);
-    myStrip->show();
+    myStrip.setPixelColor(i, 0x000000);
+    myStrip.show();
   }
 }
 
@@ -90,30 +90,38 @@ void knightRider(uint8_t& direct, uint8_t& wait_count, PIXELTYPE& count, uint32_
       myStrip->show();
       count--;
       if (count <= 0) {
-        count = 1;
+        count = 0;
         direct = 0;
       }
     }
   }
 }
 
-void fading(uint8_t& brightness, int8_t& fadeAmount, uint8_t& wait_count) {
+void fading(uint8_t& fading_brightness, int8_t& fading_fadeAmount, uint8_t& fading_wait_count) {
   // wait for 30 milliseconds to see the dimming effect
-  if (wait_count < 3) {
-    wait_count++;
+  if (fading_wait_count < 3) {
+    fading_wait_count++;
   } else {
-    wait_count = 0;
-    analogWrite(POWER_LED, brightness);
+    fading_wait_count = 0;
+    analogWrite(POWER_LED, fading_brightness);
 
     // change the brightness for next time through the loop:
-    brightness = brightness + fadeAmount;
+    fading_brightness = fading_brightness + fading_fadeAmount;
 
     // reverse the direction of the fading at the ends of the fade:
-    if (brightness <= 0 || brightness >= 255) {
-      fadeAmount = - fadeAmount;
+    if (fading_brightness <= 0 || fading_brightness >= 255) {
+      fading_fadeAmount = - fading_fadeAmount;
     }
   }
 }
+
+
+
+
+
+
+
+
 
 // 0: init state everyting is off.
 // 1: start state call start sequents
@@ -121,13 +129,13 @@ void fading(uint8_t& brightness, int8_t& fadeAmount, uint8_t& wait_count) {
 // 3: buttong is more than 10 sec pushed force off all boards.
 int state = 0;
 
-uint8_t clearBeforR = 0b1000;
+uint8_t clearBeforR = 0;
 uint8_t directR = 0;
 uint8_t waitRcount = 0;
-PIXELTYPE countR = 1;
+PIXELTYPE countR = 0;
 uint32_t colorR = 0x00FF00;
 uint32_t old_valR[NUMPIXELS]; // up to 256 lights!
-uint8_t widthR = 5;
+uint8_t widthR = 7;
 unsigned long firstPixelHueR = 0;
 
 //TODO: clearBeforR bit maste prüfen.
@@ -136,9 +144,9 @@ void StripeR() {
   switch (state) {
     case 0:
       // 0: init state everyting is off.
-      if (clearBeforR && 0b1000 == 1) {
-        clearStrip(&stripR);       // Turn OFF all pixels ASAP
-        clearBeforR = 0b0100;
+      if (clearBeforR == 1) {
+        clearStrip(stripR);       // Turn OFF all pixels ASAP
+        clearBeforR = 0;
       }
       stripR.setBrightness(255);
       // Larson time baby!
@@ -148,7 +156,7 @@ void StripeR() {
     case 1:
       // 1: start state call start sequents
       if (clearBeforR == 0) {
-        clearStrip(&stripR);       // Turn OFF all pixels ASAP
+        clearStrip(stripR);       // Turn OFF all pixels ASAP
         clearBeforR = 1;
       }
       //TODO: start sequence for each board green LEDs behind board aktivieren.
@@ -157,7 +165,7 @@ void StripeR() {
     case 2:
       // 2: run state aktive state while all boards running.
       if (clearBeforR == 0) {
-        clearStrip(&stripR);       // Turn OFF all pixels ASAP
+        clearStrip(stripR);       // Turn OFF all pixels ASAP
         clearBeforR = 1;
       }
       stripR.setBrightness(50);
@@ -175,10 +183,10 @@ void StripeR() {
 uint8_t clearBeforL = 0;
 uint8_t directL = 0;
 uint8_t waitLcount = 0;
-PIXELTYPE countL = 1;
+PIXELTYPE countL = 0;
 uint32_t colorL = 0x00FF00;
 uint32_t old_valL[NUMPIXELS]; // up to 256 lights!
-uint8_t widthL = 5;
+uint8_t widthL = 7;
 unsigned long firstPixelHueL = 0;
 
 void StripeL() {
@@ -186,7 +194,7 @@ void StripeL() {
     case 0:
       // 0: init state everyting is off.
       if (clearBeforL == 1) {
-        clearStrip(&stripL);       // Turn OFF all pixels ASAP
+        clearStrip(stripL);       // Turn OFF all pixels ASAP
         clearBeforL = 0;
       }
       stripL.setBrightness(255);
@@ -197,7 +205,7 @@ void StripeL() {
     case 1:
       // 1: start state call start sequents
       if (clearBeforL == 0) {
-        clearStrip(&stripL);       // Turn OFF all pixels ASAP
+        clearStrip(stripL);       // Turn OFF all pixels ASAP
         clearBeforL = 1;
       }
       //TODO: start sequence for each board
@@ -206,7 +214,7 @@ void StripeL() {
     case 2:
       // 2: run state aktive state while all boards running.
       if (clearBeforL == 0) {
-        clearStrip(&stripL);       // Turn OFF all pixels ASAP
+        clearStrip(stripL);       // Turn OFF all pixels ASAP
         clearBeforL = 1;
       }
       stripL.setBrightness(50);
@@ -260,7 +268,7 @@ void PoweLEDcontrol() {
   switch (state) {
     case 0:
       // 0: init state everyting is off.
-      fading(brightness, fadeAmount, LED_wait);
+      //fading(brightness, fadeAmount, LED_wait);
       break;
     case 1:
       // 1: start state call start sequents
@@ -270,7 +278,7 @@ void PoweLEDcontrol() {
         state1_wait++;
       } else {
         digitalWrite(POWER_LED, flip);
-        flip=~flip; //TODO prüfen ob das geht 
+        flip = ~flip; //TODO prüfen ob das geht
       }
       break;
 
@@ -298,6 +306,7 @@ void BoardControl() {
       // 1: start state call start sequents
       //TODO: start sequence for each board
       //TOTO: every 3 seconds one board == 33sec start sequence?
+      sr.setAllHigh();
       state = 2;
       break;
 
@@ -309,7 +318,7 @@ void BoardControl() {
     case 3:
       // 3: button is more than 10 sec pushed force off all boards.
       //TODO: countdown? 30 LEDs == 30sec?
-      sr.setAllHigh(); // set all pins LOW
+      sr.setAllHigh(); // set all pins HIGH
       state = 0;
       break;
   }
@@ -329,6 +338,9 @@ void ButtonControl() {
     if (buttonState == LOW) {
       // if the current state is LOW then the button went from off to on:
       buttonPush = !buttonPush;
+      // all states from 0-2
+      state += 1 % 3;
+      //TODO state 3 with timer
     } else {
       // if the current state is HIGH then the button went from on to off:
     }
@@ -353,11 +365,13 @@ void setup() {
 
 
   stripR.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
-  clearStrip(&stripR);       // Turn OFF all pixels ASAP
+  clearStrip(stripR);       // Turn OFF all pixels ASAP
   stripR.setBrightness(0);  // Set BRIGHTNESS to 0 (max = 255)
   stripL.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
-  clearStrip(&stripL);       // Turn OFF all pixels ASAP
+  clearStrip(stripL);       // Turn OFF all pixels ASAP
   stripL.setBrightness(0);  // Set BRIGHTNESS to 0 (max = 255)
+
+  Serial.begin(9600);
 
   scheduler.every(10, StripeR);
   scheduler.every(10, StripeL);
